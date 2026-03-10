@@ -1,0 +1,6 @@
+a. 3 files ở local
+b. 3 files ở vùng working directory
+c. 3 file vẫn ở vùng working directory vì vùng staging đang trống không có gì để commit
+d. file1 chuyển sang staging, file1 và file2 vẫn ở working directory
+e. file1 chuyển sang repository, file1 và file2 vẫn ở working directory
+f. không có gì thay đổi vì staging lại trống rồi

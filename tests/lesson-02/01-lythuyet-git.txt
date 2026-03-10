@@ -1,0 +1,6 @@
+1. Giải thích các câu lệnh git:
+- git init: Khởi tạo git repository local cho dự án
+- git add <file_name>: Đưa trạng thái hiện tại của file được chỉ định vào vùng staging để chuẩn bị commit
+- git add .: Đưa tất cả các file hiện có trong project vào staging
+- git commit -m "message": commit các file đã được add vào staging
+
