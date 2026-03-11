@@ -1,0 +1,5 @@
+Giải thích các câu lệnh git:
+1. git commit --amend: mở ra VIM, cho phép chỉnh sửa commit gần nhất
+2. git commit --amend -m"message": sửa commit gần nhất, đổi message
+3. git restore --staged <file>: chuyển file từ staging về working directory
+4. git reset HEAD~1: revert commit gần nhất về working directory
