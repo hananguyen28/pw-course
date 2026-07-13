@@ -1,0 +1,123 @@
+name: Run Tests (Manual)
+
+# Cho phép chạy thủ công từ tab Actions trên GitHub,
+# chọn môi trường và test case muốn chạy.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Môi trường chạy test'
+        type: choice
+        required: true
+        default: staging
+        options:
+          - dev
+          - staging
+          - production
+      suite:
+        description: 'Nhóm test cần chạy'
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - smoke
+          - ui
+          - api
+      tc_id:
+        description: 'Test case ID (bỏ trống = tất cả). 1 case: @TC001 | nhiều case: @TC001|@TC003'
+        type: string
+        required: false
+        default: ''
+      test_case:
+        description: 'Test case / file / thư mục (bỏ trống = chạy tất cả). VD: tests/lesson-11 hoặc full-method.spec.ts'
+        type: string
+        required: false
+        default: ''
+      grep:
+        description: 'Lọc thêm theo tên test (--grep, bỏ trống = không lọc). VD: @smoke'
+        type: string
+        required: false
+        default: ''
+      browser:
+        description: 'Trình duyệt (project)'
+        type: choice
+        required: true
+        default: chromium
+        options:
+          - chromium
+          - firefox
+          - webkit
+          - all
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    # Map môi trường -> BASE_URL. Đổi lại các URL cho đúng với dự án của bạn.
+    env:
+      BASE_URL: >-
+        ${{
+          inputs.environment == 'production' && 'https://prod.example.com' ||
+          inputs.environment == 'dev' && 'https://dev.example.com' ||
+          'https://staging.example.com'
+        }}
+      ENVIRONMENT: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: |
+          CMD="npx playwright test"
+
+          # Chọn browser/project
+          if [ "${{ inputs.browser }}" != "all" ]; then
+            CMD="$CMD --project=${{ inputs.browser }}"
+          fi
+
+          # Chọn test case (file / thư mục)
+          if [ -n "${{ inputs.test_case }}" ]; then
+            CMD="$CMD ${{ inputs.test_case }}"
+          fi
+
+          # Ghép tất cả điều kiện lọc thành 1 biểu thức --grep (OR bằng dấu |).
+          # Gồm: nhóm (suite) + Test case ID (tc_id) + grep thủ công.
+          GREP=""
+          add_grep() {
+            [ -z "$1" ] && return
+            if [ -n "$GREP" ]; then GREP="$GREP|$1"; else GREP="$1"; fi
+          }
+          if [ "${{ inputs.suite }}" != "all" ]; then
+            add_grep "@${{ inputs.suite }}"
+          fi
+          add_grep "${{ inputs.tc_id }}"
+          add_grep "${{ inputs.grep }}"
+
+          if [ -n "$GREP" ]; then
+            CMD="$CMD --grep \"$GREP\""
+          fi
+
+          echo "▶ Environment : ${{ inputs.environment }}"
+          echo "▶ BASE_URL    : $BASE_URL"
+          echo "▶ Command     : $CMD"
+          eval "$CMD"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-${{ inputs.environment }}
+          path: playwright-report/
+          retention-days: 30

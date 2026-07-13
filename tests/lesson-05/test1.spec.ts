@@ -1,6 +1,6 @@
 import test from "@playwright/test";
 
-test('Testcase 1', async ({ page }) => {
+test('Testcase 1', { tag: ['@TC003', '@ui'] }, async ({ page }) => {
     await test.step('Đi đến trang https://material.playwrightvn.com/', async () => {
         await page.goto('https://material.playwrightvn.com/');
 
