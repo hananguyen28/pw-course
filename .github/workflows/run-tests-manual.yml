@@ -50,6 +50,12 @@ on:
           - webkit
           - all
 
+# Quyền cần thiết để publish report lên GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   test:
     timeout-minutes: 60
@@ -121,3 +127,23 @@ jobs:
           name: playwright-report-${{ inputs.environment }}
           path: playwright-report/
           retention-days: 30
+
+      # Đóng gói report để publish lên GitHub Pages.
+      - name: Upload report cho Pages
+        if: ${{ !cancelled() }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: playwright-report/
+
+  # Job publish report lên GitHub Pages -> có URL xem trực tiếp.
+  publish-report:
+    needs: test
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy report lên GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
